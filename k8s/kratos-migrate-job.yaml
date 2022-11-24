@@ -163,7 +163,7 @@ data:
 
     serve:
       public:
-        base_url: http://127.0.0.1:4433/
+        base_url: http://127.0.0.1/kratos/
         cors:
           enabled: true
       admin:

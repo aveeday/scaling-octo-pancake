@@ -28,3 +28,20 @@ Use PKCE?: true
 Token URI: http://127.0.0.1:4444/oauth2/auth
 Response mode: query
 ```
+
+deploy k8s:
+```
+cd k8s
+kubectl apply -f .
+```
+
+start tunnel to ingress
+```
+minikube tunnel
+```
+open `127.0.0.1`
+
+Forward port to 127.0.0.1:8080
+```
+kubectl port-forward svc/kratos-service 8080:80
+```

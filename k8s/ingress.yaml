@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kratos-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2$3
+   
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /()()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: kratos-ui
+                port:
+                  number: 80
+          - path: /(kratos)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: kratos-service
+                port:
+                  number: 80
