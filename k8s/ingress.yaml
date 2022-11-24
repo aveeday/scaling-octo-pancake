@@ -3,20 +3,20 @@ kind: Ingress
 metadata:
   name: kratos-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2$3
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
    
 spec:
   rules:
     - http:
         paths:
-          - path: /()()(.*)
+          - path: /()(.*)
             pathType: Prefix
             backend:
               service:
                 name: kratos-ui
                 port:
                   number: 80
-          - path: /(kratos)(.*)
+          - path: /kratos(/|$)(.*)
             pathType: Prefix
             backend:
               service:
