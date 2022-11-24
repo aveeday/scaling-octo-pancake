@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert
+    kompose.version: 1.27.0 (b0ed6a2c9)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: kratos-selfservice-ui-node
+  name: kratos-selfservice-ui-node
+spec:
+  containers:
+    - env:
+        - name: KRATOS_BROWSER_URL
+          value: http://127.0.0.1:4433/
+        - name: KRATOS_PUBLIC_URL
+          value: http://kratos:4433/
+      image: oryd/kratos-selfservice-ui-node:latest
+      name: kratos-selfservice-ui-node
+      ports:
+        - containerPort: 3000
+      resources: {}
+  restartPolicy: OnFailure
+status: {}

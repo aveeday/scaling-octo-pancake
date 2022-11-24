@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert
+    kompose.version: 1.27.0 (b0ed6a2c9)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: hydra
+  name: hydra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: hydra
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: C:\ProgramData\chocolatey\lib\kubernetes-kompose\tools\kompose.exe convert
+        kompose.version: 1.27.0 (b0ed6a2c9)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: hydra
+    spec:
+      containers:
+        - args:
+            - serve
+            - -c
+            - /etc/config/hydra/hydra.yml
+            - all
+            - --dev
+          env:
+            - name: DSN
+              value: sqlite:///var/lib/sqlite/db.sqlite?_fk=true
+          image: oryd/hydra:v2.0.2
+          name: hydra
+          ports:
+            - containerPort: 4444
+            - containerPort: 4445
+            - containerPort: 5555
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/sqlite
+              name: hydra-sqlite
+            - mountPath: /etc/config/hydra
+              name: hydra-claim1
+      restartPolicy: Always
+      volumes:
+        - name: hydra-sqlite
+          persistentVolumeClaim:
+            claimName: hydra-sqlite
+        - name: hydra-claim1
+          persistentVolumeClaim:
+            claimName: hydra-claim1
+status: {}

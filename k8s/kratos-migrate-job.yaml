@@ -1,0 +1,259 @@
+### GTS DMB Job
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kratos-migrate-task
+  namespace: default
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      activeDeadlineSeconds: 60
+      restartPolicy: Never
+      # nodeSelector:
+      #   gts: "add"
+      # tolerations:
+      # - key: "gtsgroup"
+      #   operator: "Equal"
+      #   value: "gtsGroup"
+      #   effect: "NoSchedule"
+      volumes:
+        - name: kratos-sqlite
+          persistentVolumeClaim:
+            claimName: kratos-migrate-claim1
+        - name: kratos-config
+          configMap:
+            # Provide the name of the ConfigMap you want to mount.
+            name: kratos-configmap
+            # An array of keys from the ConfigMap to create as files
+            items:
+            - key: kratos.yml
+              path: kratos.yml
+            - key: identity.schema.json
+              path: identity.schema.json
+      securityContext:
+        runAsUser: 0
+        # fsGroup: 0
+        # runAsUser: 10000
+        # runAsGroup: 10000
+      containers:
+        - name: kratos-migrate-task
+          image: konst/kratos
+          command:
+            - kratos
+            - -c
+            - /etc/config/kratos/kratos.yml
+            - migrate
+            - sql
+            - -e
+            - --yes
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "64m"
+            limits:
+              memory: "500Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: kratos-sqlite
+            mountPath: /home/ory/sqlite/
+          - name: kratos-config
+            mountPath: /etc/config/kratos/
+            readOnly: true
+          env:
+          - name: DSN
+            value: sqlite:///home/ory/sqlite/db.sqlite?_fk=true&mode=rwc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kratos-migrate-claim1
+spec:
+  storageClassName: standard
+  volumeName: kratos-pv
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kratos-pv
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 5Gi
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  # persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /data/pv0001/
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # labels:
+  #   app: dashboard-v2
+  #   release: dashboard-v2
+  name: kratos-configmap
+  namespace: default
+data:
+  identity.schema.json: |-
+    {
+      "$id": "https://schemas.ory.sh/presets/kratos/quickstart/email-password/identity.schema.json",
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Person",
+      "type": "object",
+      "properties": {
+        "traits": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email",
+              "title": "E-Mail",
+              "minLength": 3,
+              "ory.sh/kratos": {
+                "credentials": {
+                  "password": {
+                    "identifier": true
+                  }
+                },
+                "verification": {
+                  "via": "email"
+                },
+                "recovery": {
+                  "via": "email"
+                }
+              }
+            },
+            "name": {
+              "type": "object",
+              "properties": {
+                "first": {
+                  "title": "First Name",
+                  "type": "string"
+                },
+                "last": {
+                  "title": "Last Name",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": [
+            "email"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+
+  kratos.yml: |-
+    version: v0.10.1
+
+    dsn: memory
+
+    serve:
+      public:
+        base_url: http://127.0.0.1:4433/
+        cors:
+          enabled: true
+      admin:
+        base_url: http://kratos:4434/
+
+    # should be accessible from container
+    oauth2_provider:
+      url: http://hydra:4445/
+
+    selfservice:
+      default_browser_return_url: http://127.0.0.1:4455/
+      allowed_return_urls:
+        - http://127.0.0.1:4455
+
+      methods:
+        password:
+          enabled: true
+        totp:
+          config:
+            issuer: Kratos
+          enabled: true
+        lookup_secret:
+          enabled: true
+        link:
+          enabled: true
+        code:
+          enabled: true
+
+      flows:
+        error:
+          ui_url: http://127.0.0.1:4455/error
+
+        settings:
+          ui_url: http://127.0.0.1:4455/settings
+          privileged_session_max_age: 15m
+          required_aal: highest_available
+
+        recovery:
+          enabled: true
+          ui_url: http://127.0.0.1:4455/recovery
+          use: code
+
+        verification:
+          enabled: true
+          ui_url: http://127.0.0.1:4455/verification
+          use: code
+          after:
+            default_browser_return_url: http://127.0.0.1:4455/
+
+        logout:
+          after:
+            default_browser_return_url: http://127.0.0.1:4455/login
+
+        login:
+          ui_url: http://127.0.0.1:4455/login
+          lifespan: 10m
+
+        registration:
+          lifespan: 10m
+          ui_url: http://127.0.0.1:4455/registration
+          after:
+            password:
+              hooks:
+                - hook: session
+
+    log:
+      level: debug
+      format: text
+      leak_sensitive_values: true
+
+    secrets:
+      cookie:
+        - PLEASE-CHANGE-ME-I-AM-VERY-INSECURE
+      cipher:
+        - 32-LONG-SECRET-NOT-SECURE-AT-ALL
+
+    ciphers:
+      algorithm: xchacha20-poly1305
+
+    hashers:
+      algorithm: bcrypt
+      bcrypt:
+        cost: 8
+
+    identity:
+      default_schema_id: default
+      schemas:
+        - id: default
+          url: file:///etc/config/kratos/identity.schema.json
+
+    courier:
+      smtp:
+        connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
