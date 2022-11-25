@@ -50,3 +50,17 @@ Email can be viewed at:
 ```
 http://127.0.0.1/mailhog/
 ```
+
+```sh
+curl -X POST -H "Content-Type: application/json" \
+    -d '{"grant_types": ["authorization_code", "refresh_token"],
+    "response_type": ["code", "id_token"],
+    "token_endpoint_auth_method": "none",
+    "scope": "openid offline",
+    "allowed_cors_origins": ["https://oidcdebugger.com"],
+    "redirect_uris": ["https://oidcdebugger.com/debug"]}' \
+    http://127.0.0.1/hydra/admin/clients
+```
+
+mr#T5T9bXF79qL
+mpaowmf@awef.awef

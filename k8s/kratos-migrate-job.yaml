@@ -171,7 +171,7 @@ data:
 
     # should be accessible from container
     oauth2_provider:
-      url: http://hydra:4445/
+      url: http://hydra-service:81/
 
     selfservice:
       default_browser_return_url: http://127.0.0.1/

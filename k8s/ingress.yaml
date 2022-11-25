@@ -16,6 +16,13 @@ spec:
                 name: kratos-ui
                 port:
                   number: 80
+          - path: /()(consent.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: consent-ui
+                port:
+                  number: 80
           - path: /kratos(/|$)(.*)
             pathType: Prefix
             backend:
@@ -23,6 +30,22 @@ spec:
                 name: kratos-service
                 port:
                   number: 80
+          - path: /hydra(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: hydra-service
+                port:
+                  number: 80
+          # for testing only
+          - path: /hydra(/|$)(admin/.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: hydra-service
+                port:
+                  number: 81
+          # for testing only
           - path: /mailhog(/|$)(.*)
             pathType: Prefix
             backend:

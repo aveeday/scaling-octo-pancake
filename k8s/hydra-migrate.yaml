@@ -1,0 +1,142 @@
+### GTS DMB Job
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hydra-migrate-task
+  namespace: default
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      activeDeadlineSeconds: 60
+      restartPolicy: Never
+      # nodeSelector:
+      #   gts: "add"
+      # tolerations:
+      # - key: "gtsgroup"
+      #   operator: "Equal"
+      #   value: "gtsGroup"
+      #   effect: "NoSchedule"
+      volumes:
+        - name: hydra-sqlite
+          persistentVolumeClaim:
+            claimName: hydra-migrate-claim1
+        - name: hydra-config
+          configMap:
+            # Provide the name of the ConfigMap you want to mount.
+            name: hydra-configmap
+            # An array of keys from the ConfigMap to create as files
+            items:
+            - key: hydra.yml
+              path: hydra.yml
+      securityContext:
+        runAsUser: 0
+        # fsGroup: 0
+        # runAsUser: 10000
+        # runAsGroup: 10000
+      containers:
+        - name: hydra-migrate-task
+          image: oryd/hydra:v2.0.2
+          command:
+            - hydra
+            - migrate
+            - -c
+            - /etc/config/hydra/hydra.yml
+            - sql
+            - --yes
+            - -e
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "64m"
+            limits:
+              memory: "500Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: hydra-sqlite
+            mountPath: /home/ory/sqlite/
+          - name: hydra-config
+            mountPath: /etc/config/hydra/
+            readOnly: true
+          env:
+          - name: DSN
+            value: sqlite:///home/ory/sqlite/db.sqlite?_fk=true&mode=rwc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hydra-migrate-claim1
+spec:
+  storageClassName: standard
+  volumeName: hydra-pv
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: hydra-pv
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 5Gi
+  # volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  # persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /data/pv0002/
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # labels:
+  #   app: dashboard-v2
+  #   release: dashboard-v2
+  name: hydra-configmap
+  namespace: default
+data:
+  hydra.yml: |-
+    serve:
+      cookies:
+        same_site_mode: Lax
+        
+      public:
+        cors:
+          enabled: true
+          allowed_methods:
+            - POST
+            - GET
+            - PUT
+            - PATCH
+            - DELETE
+          allowed_headers:
+            - Authorization
+          exposed_headers:
+            - Content-Type
+
+    urls:
+      self:
+        issuer: http://127.0.0.1/hydra
+      consent: http://127.0.0.1/consent
+      login: http://127.0.0.1/login
+      logout: http://127.0.0.1/kratos/self-service/logout
+
+    secrets:
+      system:
+        - youReallyNeedToChangeThis
+
+    oidc:
+      subject_identifiers:
+        supported_types:
+          - pairwise
+          - public
+        pairwise:
+          salt: youReallyNeedToChangeThis

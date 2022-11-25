@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: consent-ui
+spec:
+  selector:
+    app: consent-ui
+  ports:
+  - name: consent-ui-publ
+    port: 80
+    targetPort: consent-ui-publ
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consent-ui
+  namespace: default
+  labels:
+    app: consent-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consent-ui
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: consent-ui
+### Container settings
+    spec:
+      # nodeSelector:
+      #   gts: "add"
+      # tolerations:
+      # - key: "gtsgroup"
+      #   operator: "Equal"
+      #   value: "gtsGroup"
+      #   effect: "NoSchedule"
+      containers:
+      - image: oryd/hydra-login-consent-node:v2.0.2
+        name: consent-ui
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "64m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000 # public
+          name: consent-ui-publ
+        # readinessProbe:
+        #   httpGet:
+        #     path: /v1_0/health
+        #     port: 8888
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 5
+        #   successThreshold: 1
+### Set environment
+        env:
+        - name: HYDRA_ADMIN_URL
+          value: http://hydra-service:81/
