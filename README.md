@@ -45,3 +45,8 @@ Forward port to 127.0.0.1:8080
 ```
 kubectl port-forward svc/kratos-service 8080:80
 ```
+
+Email can be viewed at:
+```
+http://127.0.0.1/mailhog/
+```

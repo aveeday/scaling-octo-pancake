@@ -256,4 +256,4 @@ data:
 
     courier:
       smtp:
-        connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
+        connection_uri: smtp://mail-mock:25/?disable_starttls=true

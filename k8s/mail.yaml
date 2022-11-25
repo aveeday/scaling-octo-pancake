@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mail-mock
+spec:
+  selector:
+    app: mail-mock
+  ports:
+    - name: mail-web
+      port: 80
+      targetPort: mail-web
+    - name: mail-smtp
+      port: 25
+      targetPort: mail-smtp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail-mock
+  namespace: default
+  labels:
+    app: mail-mock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mail-mock
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: mail-mock
+    spec:
+      containers:
+        - image: mailhog/mailhog
+          name: mail-mock
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "64m"
+            limits:
+              memory: "500Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8025
+              name: mail-web
+            - containerPort: 1025
+              name: mail-smtp

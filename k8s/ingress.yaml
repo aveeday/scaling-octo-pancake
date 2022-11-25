@@ -23,3 +23,10 @@ spec:
                 name: kratos-service
                 port:
                   number: 80
+          - path: /mailhog(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: mail-mock
+                port:
+                  number: 80
